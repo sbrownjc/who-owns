@@ -16,7 +16,7 @@ func main() {
 	CheckArgs("<repo/namespace>")
 	name := os.Args[1]
 
-	authMethod, err := ssh.NewSSHAgentAuth("git")
+	sshAuth, err := ssh.NewSSHAgentAuth("git")
 	CheckIfError(err)
 
 	// Clone the inventory-mapping repository to a temp directory
@@ -32,9 +32,10 @@ func main() {
 
 	// Info("Cloning inventory-mapping to %s", directory)
 	r, err := git.PlainClone(directory, false, &git.CloneOptions{
-		Auth:  authMethod,
 		URL:   url,
+		Auth:  sshAuth,
 		Depth: 1,
+		Tags:  git.NoTags,
 	})
 	CheckIfError(err)
 
@@ -48,23 +49,23 @@ func main() {
 
 	Info("Inventory last updated on %s", head.Committer.When.Local().Format(time.RFC1123))
 
-	inventory, err := os.ReadFile(directory + "/inventory.yaml")
+	inventoryYaml, err := os.ReadFile(directory + "/inventory.yaml")
 	CheckIfError(err)
 
-	var inv Inventory
-	err = yaml.Unmarshal(inventory, &inv)
+	var inventory Inventory
+	err = yaml.Unmarshal(inventoryYaml, &inventory)
 	CheckIfError(err)
 
 	fmt.Println()
-	for owner, ownership := range inv {
-		for _, ownedNS := range ownership.Namespaces {
-			if strings.Contains(ownedNS, name) {
-				fmt.Printf("Found k8s namespace %q owned by %s\n", ownedNS, owner)
+	for owner, ownership := range inventory {
+		for _, namespace := range ownership.Namespaces {
+			if strings.Contains(namespace, name) {
+				fmt.Printf("Found k8s namespace %q owned by %s\n", namespace, owner)
 			}
 		}
-		for _, ownedRepo := range ownership.Repos {
-			if strings.Contains(ownedRepo, name) {
-				fmt.Printf("Found repo %s owned by %s\n", ownedRepo, owner)
+		for _, repo := range ownership.Repos {
+			if strings.Contains(repo, name) {
+				fmt.Printf("Found repo %s owned by %s\n", repo, owner)
 			}
 		}
 	}
