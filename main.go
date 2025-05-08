@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"os"
+	"slices"
 	"strings"
 	"time"
 
@@ -57,12 +58,14 @@ func main() {
 	CheckIfError(err)
 
 	fmt.Println()
-	for owner, ownership := range inventory {
+	for owner, ownership := range inventory.Sorted {
+		slices.Sort(ownership.Namespaces)
 		for _, namespace := range ownership.Namespaces {
 			if strings.Contains(namespace, name) {
 				fmt.Printf("Found k8s namespace %q owned by %s\n", namespace, owner)
 			}
 		}
+		slices.Sort(ownership.Repos)
 		for _, repo := range ownership.Repos {
 			if strings.Contains(repo, name) {
 				fmt.Printf("Found repo %s owned by %s\n", repo, owner)
